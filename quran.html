@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استماع القرآن الكريم — جميع القراء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0e2224;
+    --panel: #143336;
+    --panel-2: #1a3f42;
+    --gold: #d4af6a;
+    --gold-dim: #a9885280;
+    --text: #f4ede0;
+    --muted: #8fada6;
+    --line: #24494c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top, #163c3f 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+    padding-bottom:110px;
+  }
+  header{
+    padding:38px 20px 26px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+  }
+  header h1{
+    font-family:'Amiri',serif;
+    font-weight:700;
+    font-size:clamp(28px,5vw,42px);
+    margin:0 0 6px;
+    color:var(--gold);
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:15px;
+  }
+
+  .controls{
+    max-width:820px;
+    margin:26px auto 10px;
+    padding:0 18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:13px;
+    color:var(--muted);
+  }
+  select, input[type="text"]{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:12px 14px;
+    border-radius:10px;
+    font-family:'Tajawal',sans-serif;
+    font-size:15px;
+    outline:none;
+  }
+  select:focus, input[type="text"]:focus{
+    border-color:var(--gold-dim);
+  }
+  .riwaya-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .riwaya-row button{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:8px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    font-family:'Tajawal',sans-serif;
+    font-size:14px;
+    transition:border-color .2s, color .2s;
+  }
+  .riwaya-row button.active{
+    border-color:var(--gold);
+    color:var(--gold);
+  }
+
+  .status{
+    max-width:820px;
+    margin:16px auto;
+    padding:0 18px;
+    color:var(--muted);
+    font-size:14px;
+    min-height:20px;
+  }
+
+  .surah-grid{
+    max-width:820px;
+    margin:10px auto 0;
+    padding:0 18px 20px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    gap:10px;
+  }
+  .surah-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:background .15s, border-color .15s;
+    text-align:right;
+  }
+  .surah-card:hover{
+    border-color:var(--gold-dim);
+  }
+  .surah-card.playing{
+    background:var(--panel-2);
+    border-color:var(--gold);
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(212,175,106,0.0); }
+    50%{ box-shadow:0 0 0 4px rgba(212,175,106,0.12); }
+  }
+  .surah-card.unavailable{
+    opacity:.35;
+    cursor:not-allowed;
+  }
+  .surah-num{
+    font-family:'Amiri',serif;
+    color:var(--gold);
+    font-size:14px;
+    min-width:26px;
+    text-align:center;
+    border-left:1px solid var(--line);
+    padding-left:8px;
+  }
+  .surah-name{
+    font-size:15px;
+  }
+
+  .player-bar{
+    position:fixed;
+    bottom:0; right:0; left:0;
+    background:#0b1c1e;
+    border-top:1px solid var(--line);
+    padding:12px 18px;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .player-info{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+  }
+  .player-info .now-playing{
+    color:var(--gold);
+    font-family:'Amiri',serif;
+  }
+  .player-info .reciter-name{
+    color:var(--muted);
+    font-size:13px;
+  }
+  .player-controls{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .player-controls button{
+    background:none;
+    border:none;
+    color:var(--text);
+    font-size:20px;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  audio{
+    flex:1;
+    height:34px;
+  }
+
+  ::selection{ background:var(--gold-dim); }
+
+  @media (prefers-reduced-motion: reduce){
+    .surah-card.playing{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>استماع القرآن الكريم</h1>
+  <p>اختر القارئ والرواية، ثم اختر السورة للاستماع إليها</p>
+</header>
+
+<div class="controls">
+  <div class="field">
+    <label for="reciter-search">ابحث عن قارئ</label>
+    <input type="text" id="reciter-search" placeholder="اكتب اسم القارئ...">
+  </div>
+  <div class="field">
+    <label for="reciter-select">القارئ (<span id="reciter-count">...</span>)</label>
+    <select id="reciter-select"></select>
+  </div>
+  <div class="field" id="riwaya-field" style="display:none;">
+    <label>الرواية</label>
+    <div class="riwaya-row" id="riwaya-row"></div>
+  </div>
+</div>
+
+<div class="status" id="status">جارٍ تحميل قائمة القراء...</div>
+
+<div class="surah-grid" id="surah-grid"></div>
+
+<div class="player-bar">
+  <div class="player-info">
+    <span class="now-playing" id="now-playing">لم يتم اختيار سورة بعد</span>
+    <span class="reciter-name" id="now-reciter"></span>
+  </div>
+  <div class="player-controls">
+    <button id="prev-btn" title="السورة السابقة">⟩⟩</button>
+    <audio id="audio-player" controls></audio>
+    <button id="next-btn" title="السورة التالية">⟨⟨</button>
+  </div>
+</div>
+
+<script>
+const SURAH_NAMES = [
+"الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
+"هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
+"الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
+"لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر",
+"فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق",
+"الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
+"الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج",
+"نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس",
+"التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
+"الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
+"القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
+"المسد","الإخلاص","الفلق","الناس"
+];
+
+let reciters = [];
+let currentReciter = null;
+let currentMoshaf = null;
+let currentSurahList = [];
+let currentSurahIndex = -1;
+
+const statusEl = document.getElementById('status');
+const searchEl = document.getElementById('reciter-search');
+const selectEl = document.getElementById('reciter-select');
+const riwayaField = document.getElementById('riwaya-field');
+const riwayaRow = document.getElementById('riwaya-row');
+const gridEl = document.getElementById('surah-grid');
+const audioEl = document.getElementById('audio-player');
+const nowPlayingEl = document.getElementById('now-playing');
+const nowReciterEl = document.getElementById('now-reciter');
+const countEl = document.getElementById('reciter-count');
+
+async function loadReciters(){
+  try{
+    // نجلب كل الروايات المتاحة (كل قارئ قد يكون له أكثر من رواية/مصحف)
+    const res = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
+    const data = await res.json();
+    reciters = (data.reciters || []).slice();
+    // ترتيب أبجدي عربي لتسهيل تصفح القائمة الكاملة لجميع القراء
+    reciters.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    countEl.textContent = reciters.length;
+    populateReciterSelect(reciters);
+    statusEl.textContent = `تم تحميل ${reciters.length} قارئًا (جميع القراء المتوفرين في القاعدة). اختر قارئًا للبدء.`;
+    if(reciters.length){
+      selectEl.value = 0;
+      onReciterChange();
+    }
+  }catch(err){
+    statusEl.textContent = 'تعذّر تحميل قائمة القراء. تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة.';
+  }
+}
+
+function populateReciterSelect(list){
+  selectEl.innerHTML = '';
+  list.forEach((r)=>{
+    const opt = document.createElement('option');
+    opt.value = reciters.indexOf(r);
+    opt.textContent = r.name;
+    selectEl.appendChild(opt);
+  });
+}
+
+searchEl.addEventListener('input', ()=>{
+  const q = searchEl.value.trim();
+  const filtered = q ? reciters.filter(r => r.name.includes(q)) : reciters;
+  populateReciterSelect(filtered);
+  countEl.textContent = `${filtered.length} من ${reciters.length}`;
+  if(filtered.length){
+    selectEl.value = reciters.indexOf(filtered[0]);
+    onReciterChange();
+  }else{
+    riwayaField.style.display = 'none';
+    gridEl.innerHTML = '';
+    statusEl.textContent = 'لا توجد نتائج مطابقة.';
+  }
+});
+
+selectEl.addEventListener('change', onReciterChange);
+
+function onReciterChange(){
+  const idx = parseInt(selectEl.value, 10);
+  currentReciter = reciters[idx];
+  if(!currentReciter) return;
+  const moshafs = currentReciter.moshaf || [];
+  riwayaRow.innerHTML = '';
+  if(moshafs.length > 1){
+    riwayaField.style.display = 'flex';
+    moshafs.forEach((m, i)=>{
+      const btn = document.createElement('button');
+      btn.textContent = m.name;
+      btn.className = i === 0 ? 'active' : '';
+      btn.addEventListener('click', ()=>{
+        [...riwayaRow.children].forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        setMoshaf(m);
+      });
+      riwayaRow.appendChild(btn);
+    });
+  }else{
+    riwayaField.style.display = 'none';
+  }
+  if(moshafs.length){
+    setMoshaf(moshafs[0]);
+  }else{
+    gridEl.innerHTML = '';
+    statusEl.textContent = 'لا توجد تلاوات متاحة لهذا القارئ حاليًا.';
+  }
+}
+
+function setMoshaf(moshaf){
+  currentMoshaf = moshaf;
+  currentSurahList = (moshaf.surah_list || '').split(',').map(n => parseInt(n,10)).filter(Boolean);
+  renderGrid();
+  statusEl.textContent = `${currentReciter.name} — ${moshaf.name} (${currentSurahList.length} سورة متاحة)`;
+}
+
+function renderGrid(){
+  gridEl.innerHTML = '';
+  for(let n = 1; n <= 114; n++){
+    const available = currentSurahList.includes(n);
+    const card = document.createElement('div');
+    card.className = 'surah-card' + (available ? '' : ' unavailable');
+    card.dataset.surah = n;
+    card.innerHTML = `<span class="surah-num">${n}</span><span class="surah-name">${SURAH_NAMES[n-1]}</span>`;
+    if(available){
+      card.addEventListener('click', ()=> playSurah(n));
+    }
+    gridEl.appendChild(card);
+  }
+}
+
+function surahUrl(n){
+  const padded = String(n).padStart(3,'0');
+  return currentMoshaf.server + padded + '.mp3';
+}
+
+function playSurah(n){
+  currentSurahIndex = currentSurahList.indexOf(n);
+  audioEl.src = surahUrl(n);
+  audioEl.play().catch(()=>{
+    statusEl.textContent = 'تعذّر تشغيل هذه السورة لهذا القارئ. جرّب سورة أخرى.';
+  });
+  nowPlayingEl.textContent = `سورة ${SURAH_NAMES[n-1]}`;
+  nowReciterEl.textContent = `${currentReciter.name} — ${currentMoshaf.name}`;
+  [...gridEl.children].forEach(c => c.classList.toggle('playing', parseInt(c.dataset.surah,10) === n));
+}
+
+document.getElementById('next-btn').addEventListener('click', ()=>{
+  if(currentSurahIndex < currentSurahList.length - 1){
+    playSurah(currentSurahList[currentSurahIndex + 1]);
+  }
+});
+document.getElementById('prev-btn').addEventListener('click', ()=>{
+  if(currentSurahIndex > 0){
+    playSurah(currentSurahList[currentSurahIndex - 1]);
+  }
+});
+audioEl.addEventListener('ended', ()=>{
+  if(currentSurahIndex < currentSurahList.length - 1){
+    playSurah(currentSurahList[currentSurahIndex + 1]);
+  }
+});
+
+loadReciters();
+</script>
+
+</body>
+</html>
